@@ -1,0 +1,26 @@
+{
+	"name": "TRG_PMT_FRCST",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"STG_TABLE_NAME": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "AP-PMT-FRCST-DLY"
+		},
+		"type": "AzureSqlDWTable",
+		"schema": [],
+		"typeProperties": {
+			"tableName": {
+				"value": "@dataset().STG_TABLE_NAME",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

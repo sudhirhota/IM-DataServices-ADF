@@ -1,0 +1,25 @@
+{
+	"name": "TRG_DTU_TL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TABLE_NAME": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "DTU-LOAD-ON DEMAND"
+		},
+		"type": "AzureSqlDWTable",
+		"typeProperties": {
+			"tableName": {
+				"value": "@Concat('ADMIN.',dataset().TABLE_NAME)",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

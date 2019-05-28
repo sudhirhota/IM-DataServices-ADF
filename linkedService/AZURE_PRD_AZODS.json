@@ -1,0 +1,15 @@
+{
+	"name": "AZURE_PRD_AZODS",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=False;data source=cldazpodssql01.global.corp;initial catalog=AZODS;user id=svc_azureadf001",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJjMjUxMjBiMi00ZGY1LTQ4ZjEtOTk5My05ODgyOWRmNTU3ZDkiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "PRD-GATEWAY-IR",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

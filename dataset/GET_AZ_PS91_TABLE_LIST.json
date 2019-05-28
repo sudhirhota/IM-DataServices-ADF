@@ -1,0 +1,15 @@
+{
+	"name": "GET_AZ_PS91_TABLE_LIST",
+	"properties": {
+		"description": "Get all PS91 table list for processing.",
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "PS-91-LOAD-DLY"
+		},
+		"type": "AzureSqlDWTable"
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

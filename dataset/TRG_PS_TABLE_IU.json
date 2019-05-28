@@ -1,0 +1,25 @@
+{
+	"name": "TRG_PS_TABLE_IU",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_AZODS",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"STG_TABLE_NAME": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "PS-ODS-LOAD-DLY"
+		},
+		"type": "SqlServerTable",
+		"typeProperties": {
+			"tableName": {
+				"value": "@dataset().STG_TABLE_NAME",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

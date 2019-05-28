@@ -1,0 +1,379 @@
+{
+	"name": "OMNI-UNIV-DW-LOAD",
+	"properties": {
+		"description": "OMNICHANNEL UNIVERSAL VIEW",
+		"activities": [
+			{
+				"name": "COPY-OMNI-UNIV-TL",
+				"type": "Copy",
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderStoredProcedureName": "[ADMIN].[SP_EXTRACT_OMNICHANNEL_UNIV_ODS]"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"allowPolyBase": true,
+						"preCopyScript": "Truncate Table  [ADMIN].[OMNICHANNEL_UNIV_ODS]",
+						"polyBaseSettings": {
+							"rejectValue": 0,
+							"rejectType": "value",
+							"useTypeDefault": false
+						}
+					},
+					"enableStaging": true,
+					"stagingSettings": {
+						"linkedServiceName": {
+							"referenceName": "AZURE_PRD_BLOBSTORAGE",
+							"type": "LinkedServiceReference"
+						},
+						"path": "adfstagingcopydata"
+					},
+					"parallelCopies": 28,
+					"enableSkipIncompatibleRow": false,
+					"dataIntegrationUnits": 32,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "LEVEL",
+									"type": "Int16"
+								},
+								"sink": {
+									"name": "LEVEL",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "PRICE",
+									"type": "Decimal"
+								},
+								"sink": {
+									"name": "PRICE",
+									"type": "Decimal"
+								}
+							},
+							{
+								"source": {
+									"name": "XSTAMP",
+									"type": "String"
+								},
+								"sink": {
+									"name": "XSTAMP",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "DSTAMP",
+									"type": "String"
+								},
+								"sink": {
+									"name": "DSTAMP",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "ID",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "ID",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "BRANCHID",
+									"type": "String"
+								},
+								"sink": {
+									"name": "BRANCHID",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "SKUITEMID",
+									"type": "String"
+								},
+								"sink": {
+									"name": "SKUITEMID",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "Country_code",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COUNTRY_CODE",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "LOAD_DT",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "LOAD_DT",
+									"type": "DateTime"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "SRC_OMNI_TL",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "TGT_OMNI_TL",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "COPY-PRIC-ANA-UNIV-TL",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "COPY-OMNI-UNIV-TL",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderStoredProcedureName": "[ADMIN].[SP_EXTRACT_PRICING_ANALYSIS_UNIV_ODS]"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"allowPolyBase": true,
+						"preCopyScript": "TRUNCATE TABLE [ADMIN].[PRICING_ANALYSIS_UNIV_ODS]",
+						"polyBaseSettings": {
+							"rejectValue": 0,
+							"rejectType": "value",
+							"useTypeDefault": false
+						}
+					},
+					"enableStaging": true,
+					"stagingSettings": {
+						"linkedServiceName": {
+							"referenceName": "AZURE_PRD_BLOBSTORAGE",
+							"type": "LinkedServiceReference"
+						},
+						"path": "adfstagingcopydata"
+					},
+					"parallelCopies": 28,
+					"dataIntegrationUnits": 32,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "branchid",
+									"type": "String"
+								},
+								"sink": {
+									"name": "BRANCHID",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "skuitemid",
+									"type": "String"
+								},
+								"sink": {
+									"name": "SKUITEMID",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "level",
+									"type": "Int16"
+								},
+								"sink": {
+									"name": "LEVEL",
+									"type": "Int16"
+								}
+							},
+							{
+								"source": {
+									"name": "price",
+									"type": "Decimal"
+								},
+								"sink": {
+									"name": "PRICE",
+									"type": "Decimal"
+								}
+							},
+							{
+								"source": {
+									"name": "lvl_dstamp",
+									"type": "String"
+								},
+								"sink": {
+									"name": "LVL_DSTAMP",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "payamt",
+									"type": "Decimal"
+								},
+								"sink": {
+									"name": "PAYAMT",
+									"type": "Decimal"
+								}
+							},
+							{
+								"source": {
+									"name": "udesc",
+									"type": "String"
+								},
+								"sink": {
+									"name": "UDESC",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "untpri",
+									"type": "Decimal"
+								},
+								"sink": {
+									"name": "UNTPRI",
+									"type": "Decimal"
+								}
+							},
+							{
+								"source": {
+									"name": "fromdt",
+									"type": "String"
+								},
+								"sink": {
+									"name": "FROMDT",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "todt",
+									"type": "String"
+								},
+								"sink": {
+									"name": "TODT",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "ppayd_dstamp",
+									"type": "String"
+								},
+								"sink": {
+									"name": "PPAYD_DSTAMP",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "ppaym_dstamp",
+									"type": "String"
+								},
+								"sink": {
+									"name": "PPAYM_DSTAMP",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "pgrpid",
+									"type": "Int32"
+								},
+								"sink": {
+									"name": "PGRPID",
+									"type": "Int32"
+								}
+							},
+							{
+								"source": {
+									"name": "lname",
+									"type": "String"
+								},
+								"sink": {
+									"name": "LNAME",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "Country_code",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COUNTRY_CODE",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "LOAD_DT",
+									"type": "DateTime"
+								},
+								"sink": {
+									"name": "LOAD_DT",
+									"type": "DateTime"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "SRC_PRC_ANA_TL",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "TGT_PRIC_ANA_TL",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "AZ-DW-AP-LOAD"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

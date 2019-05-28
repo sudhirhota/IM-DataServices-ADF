@@ -1,0 +1,34 @@
+{
+	"name": "GET_AZ_DTU_TABLE_LIST",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "DTU-LOAD-ON DEMAND"
+		},
+		"type": "AzureSqlDWTable",
+		"structure": [
+			{
+				"name": "TABLE_NAME"
+			},
+			{
+				"name": "LOAD_TYPE"
+			},
+			{
+				"name": "STG_TABLE_NAME"
+			},
+			{
+				"name": "SPROC_NAME"
+			},
+			{
+				"name": "SRC_SQL"
+			},
+			{
+				"name": "CDC_TS"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,17 @@
+{
+	"name": "TRG_PS_91_PL_FLATENED",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "BULK-LOAD-ON DEMAND"
+		},
+		"type": "AzureSqlDWTable",
+		"typeProperties": {
+			"tableName": "[ADMIN].[PS_91_LEDGER_PL_FLATTENED]"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

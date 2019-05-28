@@ -1,0 +1,20 @@
+{
+	"name": "GET_AZ_TABLE_LIST",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "BULK-LOAD-ON DEMAND"
+		},
+		"type": "AzureSqlDWTable",
+		"structure": [
+			{
+				"name": "TABLE_NAME",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

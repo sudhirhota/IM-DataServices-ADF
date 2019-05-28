@@ -1,0 +1,15 @@
+{
+	"name": "GET_FISCAL_YEAR",
+	"properties": {
+		"description": "Get Fiscal year values from Netezza PS_91_PERIODS table.",
+		"linkedServiceName": {
+			"referenceName": "NETEZZA_PRD_EDW",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "BULK-LOAD-ON DEMAND"
+		},
+		"type": "NetezzaTable"
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

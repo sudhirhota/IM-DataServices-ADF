@@ -1,0 +1,16 @@
+{
+	"name": "ARSTERT_PRD_ARSCAN",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "ARS CAN tertiary db connection details",
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=False;data source=ABCGYDCDSQL02;initial catalog=ARS_CAN;user id=svc_azureadf002",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIwZjM4N2YyZi03ZWU4LTQ3ZTctOTdmNy03MDE5MDRiNmIxYzIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "PRD-GATEWAY-IR",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

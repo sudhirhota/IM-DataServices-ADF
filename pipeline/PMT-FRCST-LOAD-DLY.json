@@ -1,0 +1,263 @@
+{
+	"name": "PMT-FRCST-LOAD-DLY",
+	"properties": {
+		"activities": [
+			{
+				"name": "LOOKUP-PMT-FRCST",
+				"type": "Lookup",
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "SELECT D.TABLE_NAME,D.LOAD_TYPE,D.STG_TABLE_NAME,D.SPROC_NAME,D.SRC_SQL,W.CDC_TS \nFROM [META].[META_DB_TBL] D JOIN [META].[META_WATERMARK_TBL] W \nON D.TABLE_KEY=W.TABLE_KEY AND JOB_NAME='LD_AP_FRCST' ORDER BY D.TABLE_KEY",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "GET_AZ_PMT_FRCST_TABLE_LIST",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FOREACH-PMT-FRCST-TABLE",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LOOKUP-PMT-FRCST",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LOOKUP-PMT-FRCST').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "COPY-PMT-FRCST",
+							"type": "Copy",
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 2,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Destination",
+									"value": "@{concat('[STG].\"', item().STG_TABLE_NAME, '\"')}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"sqlReaderQuery": {
+										"value": "@concat(item().SRC_SQL,'''',item().CDC_TS,'''')",
+										"type": "Expression"
+									}
+								},
+								"sink": {
+									"type": "SqlDWSink",
+									"allowPolyBase": true,
+									"writeBatchSize": 25000,
+									"preCopyScript": {
+										"value": "TRUNCATE TABLE  [STG].\"@{item().STG_TABLE_NAME}\"",
+										"type": "Expression"
+									},
+									"polyBaseSettings": {
+										"rejectValue": 0,
+										"rejectType": "value",
+										"useTypeDefault": false
+									}
+								},
+								"enableStaging": true,
+								"stagingSettings": {
+									"linkedServiceName": {
+										"referenceName": "AZURE_PRD_BLOBSTORAGE",
+										"type": "LinkedServiceReference"
+									},
+									"path": "adfstagingcopydata"
+								},
+								"parallelCopies": 32
+							},
+							"inputs": [
+								{
+									"referenceName": "SRC_PMT_FRCST",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "TRG_PMT_FRCST",
+									"type": "DatasetReference",
+									"parameters": {
+										"STG_TABLE_NAME": {
+											"value": "@concat('[STG].',item().STG_TABLE_NAME)",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "SP-PMT-FRCST",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "COPY-PMT-FRCST",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"typeProperties": {
+								"storedProcedureName": {
+									"value": "[ADMIN].\"@{item().SPROC_NAME}\"",
+									"type": "Expression"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "AZURE_PRD_DWHSE",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "COPY-FAILURE-NOTIFICATION",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "COPY-PMT-FRCST",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"typeProperties": {
+								"url": "https://prod-31.southcentralus.logic.azure.com:443/workflows/880b09407d734a0c8f6196ee7f0cd14d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=F2E6JSu1N4sZh8531vB291VxXdETWGHNsB2hSFDvmrs",
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/json"
+								},
+								"body": {
+									"DataFactoryName": "@{pipeline().DataFactory}",
+									"PipelineName": "@{pipeline().Pipeline}",
+									"PipelineTriggerName": "@{pipeline().TriggerName}",
+									"PipelineTriggerType": "@{pipeline().TriggerType}",
+									"PipelineTriggerTime": "@{pipeline().TriggerTime}",
+									"SourceTableName": "@{item().TABLE_NAME}",
+									"SourceSQL": "@{item().SRC_SQL}>=Translate('@{item().CDC_TS}','T',' ')",
+									"TargetTableName": "@{item().TABLE_NAME}",
+									"EmailTo": "@{pipeline().parameters.EmailTo}"
+								}
+							}
+						},
+						{
+							"name": "SP-FAILURE-NOTIFICATION",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "SP-PMT-FRCST",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"typeProperties": {
+								"url": "https://prod-31.southcentralus.logic.azure.com:443/workflows/880b09407d734a0c8f6196ee7f0cd14d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=F2E6JSu1N4sZh8531vB291VxXdETWGHNsB2hSFDvmrs",
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/json"
+								},
+								"body": {
+									"DataFactoryName": "@{pipeline().DataFactory}",
+									"PipelineName": "@{pipeline().Pipeline}",
+									"PipelineTriggerName": "@{pipeline().TriggerName}",
+									"PipelineTriggerType": "@{pipeline().TriggerType}",
+									"PipelineTriggerTime": "@{pipeline().TriggerTime}",
+									"SourceTableName": "@{item().TABLE_NAME}",
+									"SourceSQL": "@{item().SRC_SQL}>=Translate('@{item().CDC_TS}','T',' ')",
+									"TargetTableName": "@{item().TABLE_NAME}",
+									"EmailTo": "@{pipeline().parameters.EmailTo}"
+								}
+							}
+						},
+						{
+							"name": "COPY-SUCCESS-NOTIFICATION",
+							"type": "WebActivity",
+							"dependsOn": [
+								{
+									"activity": "SP-PMT-FRCST",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"typeProperties": {
+								"url": "https://prod-13.southcentralus.logic.azure.com:443/workflows/95fb9d00f9e74b90bd955ac75c6fb36d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2i_qy4baaiOuabnJ7PkuAAUDhoUR3GIvUaI6SFI2yz8",
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/json"
+								},
+								"body": {
+									"value": "{\n    \"DataFactoryName\":\n        \"@{pipeline().DataFactory}\",\n    \"PipelineName\":\n        \"@{pipeline().Pipeline}\",\n     \"PipelineTriggerName\":\n\t\"@{pipeline().TriggerName}\",\n    \"PipelineTriggerType\":\n\t\"@{pipeline().TriggerType}\",\n    \"PipelineTriggerTime\":\n\t\"@{pipeline().TriggerTime}\",\n    \"CopyDuration\":\n        \"@{activity('COPY-PMT-FRCST').output.copyduration}\",\n     \"RowsRead\": \n\t\"@{activity('COPY-PMT-FRCST').output.rowsRead}\",\n     \"RowsWritten\": \n\t\"@{activity('COPY-PMT-FRCST').output.rowsCopied}\",\n    \"EmailTo\":\n        \"@{pipeline().parameters.EmailTo}\",\n    \"SourceTableName\":\n\t\"@{item().TABLE_NAME}\",\n    \"SourceSQL\":\n\t\"@{item().SRC_SQL}{item().CDC_TS}\",\n    \"TargetTableName\":\n\t\"@{item().STG_TABLE_NAME}\",\n     \"StoredProcedureName\":\n   \t\"ADMIN.@{item().SPROC_NAME}\",\n      \"StoredProcedureExecutionDuration\":\n\t\"@{activity('SP-PMT-FRCST').output.executionDuration}\"\n\t}\n",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"EmailTo": {
+				"type": "string",
+				"defaultValue": "List-AGU-Azure-IM-Data-Operations@nutrien.com"
+			}
+		},
+		"folder": {
+			"name": "AZ-DW-AP-LOAD"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

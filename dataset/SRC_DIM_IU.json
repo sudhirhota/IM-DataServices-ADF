@@ -1,0 +1,14 @@
+{
+	"name": "SRC_DIM_IU",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NETEZZA_PRD_EDW",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "DIM-LOAD-DLY"
+		},
+		"type": "NetezzaTable"
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

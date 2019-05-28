@@ -1,0 +1,14 @@
+{
+	"name": "SRC_PS91_TL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NETEZZA_PRD_EDW",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "PS-91-LOAD-DLY"
+		},
+		"type": "NetezzaTable"
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

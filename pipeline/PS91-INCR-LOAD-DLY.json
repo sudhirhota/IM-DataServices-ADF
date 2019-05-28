@@ -1,0 +1,357 @@
+{
+	"name": "PS91-INCR-LOAD-DLY",
+	"properties": {
+		"description": "Incremental jobs to extract and load incremental data related to PS91 tables in SQL DWH.",
+		"activities": [
+			{
+				"name": "LOOKUP-PS91-INCR",
+				"description": "LOOKUP FOR PS91 TABLE LIST",
+				"type": "Lookup",
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "select TABLE_NAME,LOAD_TYPE,SPROC_NAME, SRC_SQL,STG_TABLE_NAME from [META].[META_DB_TBL] where JOB_NAME= 'LD_PS_91'",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "GET_AZ_PS91_TABLE_LIST",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FOREACH-PS91-TABLE",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LOOKUP-PS91-INCR",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LOOKUP-PS91-INCR').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 4,
+					"activities": [
+						{
+							"name": "CHECK-PS91-LOAD-TYPE",
+							"type": "IfCondition",
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(item().LOAD_TYPE,'T/L')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "LOOKUP-PS91-FISCALYEAR",
+										"type": "Lookup",
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"typeProperties": {
+											"source": {
+												"type": "NetezzaSource",
+												"query": "select max(FISCAL_YEAR) as FISCAL_YEAR from PS_91_LEDGER_PL_FLATTENED"
+											},
+											"dataset": {
+												"referenceName": "LOOK_UP_FISCAL_YR",
+												"type": "DatasetReference"
+											},
+											"firstRowOnly": true
+										}
+									},
+									{
+										"name": "COPY-PS91-INCR-IU",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "LOOKUP-PS91-FISCALYEAR",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 2,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [
+											{
+												"name": "Destination",
+												"value": "@{Concat('ADMIN.',item().TABLE_NAME)}"
+											}
+										],
+										"typeProperties": {
+											"source": {
+												"type": "NetezzaSource",
+												"query": {
+													"value": "@concat(item().SRC_SQL,'>=',activity('LOOKUP-PS91-FISCALYEAR').output.Firstrow.FISCAL_YEAR)",
+													"type": "Expression"
+												}
+											},
+											"sink": {
+												"type": "SqlDWSink",
+												"allowPolyBase": true,
+												"writeBatchSize": 50000,
+												"preCopyScript": {
+													"value": "@{concat('DELETE FROM [ADMIN].',item().TABLE_NAME,'  ','WHERE FISCAL_YEAR>=',activity('LOOKUP-PS91-FISCALYEAR').output.Firstrow.FISCAL_YEAR)}",
+													"type": "Expression"
+												},
+												"polyBaseSettings": {
+													"rejectValue": 0,
+													"rejectType": "value",
+													"useTypeDefault": false
+												}
+											},
+											"enableStaging": true,
+											"stagingSettings": {
+												"linkedServiceName": {
+													"referenceName": "AZURE_PRD_BLOBSTORAGE",
+													"type": "LinkedServiceReference"
+												}
+											},
+											"parallelCopies": 32
+										},
+										"inputs": [
+											{
+												"referenceName": "SRC_PS91_IU",
+												"type": "DatasetReference"
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "TGT_PS91_IU",
+												"type": "DatasetReference",
+												"parameters": {
+													"TABLE_NAME": "@item().TABLE_NAME"
+												}
+											}
+										]
+									},
+									{
+										"name": "COPY-SUCCESS-NOTIFICATION-IU",
+										"type": "WebActivity",
+										"dependsOn": [
+											{
+												"activity": "COPY-PS91-INCR-IU",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"typeProperties": {
+											"url": "https://prod-13.southcentralus.logic.azure.com:443/workflows/95fb9d00f9e74b90bd955ac75c6fb36d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2i_qy4baaiOuabnJ7PkuAAUDhoUR3GIvUaI6SFI2yz8",
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/json"
+											},
+											"body": {
+												"value": "{\n    \"DataFactoryName\":\n        \"@{pipeline().DataFactory}\",\n    \"PipelineName\":\n        \"@{pipeline().Pipeline}\",\n     \"PipelineTriggerName\":\n\t\"@{pipeline().TriggerName}\",\n    \"PipelineTriggerType\":\n\t\"@{pipeline().TriggerType}\",\n    \"PipelineTriggerTime\":\n\t\"@{pipeline().TriggerTime}\",\n    \"CopyDuration\":\n        \"@{activity('COPY-PS91-INCR-IU').output.copyduration}\",\n     \"RowsRead\": \n\t\"@{activity('COPY-PS91-INCR-IU').output.rowsRead}\",\n     \"RowsWritten\": \n\t\"@{activity('COPY-PS91-INCR-IU').output.rowsCopied}\",\n    \"EmailTo\":\n        \"@{pipeline().parameters.EmailTo}\",\n    \"SourceTableName\":\n\t\"@{item().TABLE_NAME}\",\n    \"SourceSQL\":\n\t\"@concat(item().SRC_SQL,'>=',activity('LOOKUP-PS91-FISCALYEAR').output.Firstrow.FISCAL_YEAR)\",\n    \"TargetTableName\":\n\t\"@{item().TABLE_NAME}\"\n  \n\t}",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "COPY-FAILURE-NOTIFICATION-IU",
+										"type": "WebActivity",
+										"dependsOn": [
+											{
+												"activity": "COPY-PS91-INCR-IU",
+												"dependencyConditions": [
+													"Failed"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"typeProperties": {
+											"url": "https://prod-31.southcentralus.logic.azure.com:443/workflows/880b09407d734a0c8f6196ee7f0cd14d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=F2E6JSu1N4sZh8531vB291VxXdETWGHNsB2hSFDvmrs",
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/json"
+											},
+											"body": {
+												"value": "{\"DataFactoryName\":\"@{pipeline().DataFactory}\",\"PipelineName\":\"@{pipeline().Pipeline}\",\"PipelineTriggerName\":\"@{pipeline().TriggerName}\",\"PipelineTriggerType\":\"@{pipeline().TriggerType}\",\"PipelineTriggerTime\":\"@{pipeline().TriggerTime}\",\"SourceTableName\":\"@{item().TABLE_NAME}\",\"SourceSQL\":\"@{item().SRC_SQL}>=Translate('@{item().CDC_TS}','T',' ')\",\"TargetTableName\":\"@{item().TABLE_NAME}\",\"EmailTo\":\"@{pipeline().parameters.EmailTo}\"}",
+												"type": "Expression"
+											}
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "COPY-PS91-INCR-TL",
+										"type": "Copy",
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 2,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [
+											{
+												"name": "Destination",
+												"value": "@{Concat('ADMIN.',item().TABLE_NAME)}"
+											}
+										],
+										"typeProperties": {
+											"source": {
+												"type": "NetezzaSource",
+												"query": {
+													"value": "@{item().SRC_SQL}",
+													"type": "Expression"
+												}
+											},
+											"sink": {
+												"type": "SqlDWSink",
+												"allowPolyBase": true,
+												"writeBatchSize": 50000,
+												"preCopyScript": {
+													"value": "TRUNCATE TABLE  [ADMIN].\"@{item().TABLE_NAME}\"",
+													"type": "Expression"
+												},
+												"polyBaseSettings": {
+													"rejectValue": 0,
+													"rejectType": "value",
+													"useTypeDefault": false
+												}
+											},
+											"enableStaging": true,
+											"stagingSettings": {
+												"linkedServiceName": {
+													"referenceName": "AZURE_PRD_BLOBSTORAGE",
+													"type": "LinkedServiceReference"
+												}
+											},
+											"parallelCopies": 32,
+											"enableSkipIncompatibleRow": false
+										},
+										"inputs": [
+											{
+												"referenceName": "SRC_PS91_TL",
+												"type": "DatasetReference"
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "TGT_PS91_TL",
+												"type": "DatasetReference",
+												"parameters": {
+													"TABLE_NAME": "@item().TABLE_NAME"
+												}
+											}
+										]
+									},
+									{
+										"name": "COPY-SUCCESS-NOTIFICATION",
+										"type": "WebActivity",
+										"dependsOn": [
+											{
+												"activity": "COPY-PS91-INCR-TL",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"typeProperties": {
+											"url": "https://prod-13.southcentralus.logic.azure.com:443/workflows/95fb9d00f9e74b90bd955ac75c6fb36d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2i_qy4baaiOuabnJ7PkuAAUDhoUR3GIvUaI6SFI2yz8",
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/json"
+											},
+											"body": {
+												"value": "{\n    \"DataFactoryName\":\n        \"@{pipeline().DataFactory}\",\n    \"PipelineName\":\n        \"@{pipeline().Pipeline}\",\n     \"PipelineTriggerName\":\n\t\"@{pipeline().TriggerName}\",\n    \"PipelineTriggerType\":\n\t\"@{pipeline().TriggerType}\",\n    \"PipelineTriggerTime\":\n\t\"@{pipeline().TriggerTime}\",\n    \"CopyDuration\":\n        \"@{activity('COPY-PS91-INCR-TL').output.copyduration}\",\n     \"RowsRead\": \n\t\"@{activity('COPY-PS91-INCR-TL').output.rowsRead}\",\n     \"RowsWritten\": \n\t\"@{activity('COPY-PS91-INCR-TL').output.rowsCopied}\",\n    \"EmailTo\":\n        \"@{pipeline().parameters.EmailTo}\",\n    \"SourceTableName\":\n\t\"@{item().TABLE_NAME}\",\n    \"SourceSQL\":\n\t\"@{item().SRC_SQL}\",\n    \"TargetTableName\":\n\t\"@{item().TABLE_NAME}\"\n\n\t}",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "COPY-FAILURE-NOTIFICATION",
+										"type": "WebActivity",
+										"dependsOn": [
+											{
+												"activity": "COPY-PS91-INCR-TL",
+												"dependencyConditions": [
+													"Failed"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"typeProperties": {
+											"url": "https://prod-31.southcentralus.logic.azure.com:443/workflows/880b09407d734a0c8f6196ee7f0cd14d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=F2E6JSu1N4sZh8531vB291VxXdETWGHNsB2hSFDvmrs",
+											"method": "POST",
+											"headers": {
+												"Content-Type": "application/json"
+											},
+											"body": {
+												"value": "{\n\t\"DataFactoryName\":\n\t\t\"@{pipeline().DataFactory}\",\n\t\"PipelineName\":\n\t\t\"@{pipeline().Pipeline}\",\n\t\"PipelineTriggerName\":\n\t\t\"@{pipeline().TriggerName}\",\n\t\"PipelineTriggerType\":\n\t\t\"@{pipeline().TriggerType}\",\n\t\"PipelineTriggerTime\":\n\t\t\"@{pipeline().TriggerTime}\",\n\t\"SourceTableName\":\n\t\t\"@{item().TABLE_NAME}\",\n\t\"SourceSQL\":\n\t\t\"@{item().SRC_SQL}>=Current_Year\",\n\t\"TargetTableName\":\n\t\t\"@{item().TABLE_NAME}\",\n\t\"EmailTo\":\n\t\t\"@{pipeline().parameters.EmailTo}\"\n}",
+												"type": "Expression"
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"EmailTo": {
+				"type": "string",
+				"defaultValue": "List-AGU-Azure-IM-Data-Operations@nutrien.com"
+			}
+		},
+		"folder": {
+			"name": "AZ-DW-LOAD"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

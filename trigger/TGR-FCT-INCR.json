@@ -1,0 +1,37 @@
+{
+	"name": "TGR-FCT-INCR",
+	"properties": {
+		"description": "Trigger to load FACTtables with incremental load",
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "FCT-INCR-LOAD-DLY",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2019-04-24T06:00:00Z",
+				"timeZone": "UTC",
+				"schedule": {
+					"hours": [
+						7
+					],
+					"weekDays": [
+						"Monday",
+						"Tuesday",
+						"Wednesday",
+						"Thursday",
+						"Friday",
+						"Saturday"
+					]
+				}
+			}
+		}
+	}
+}

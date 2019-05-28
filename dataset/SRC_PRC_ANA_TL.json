@@ -1,0 +1,15 @@
+{
+	"name": "SRC_PRC_ANA_TL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_AZODS",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "OMNI_UNIV_DW_LOAD"
+		},
+		"type": "SqlServerTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

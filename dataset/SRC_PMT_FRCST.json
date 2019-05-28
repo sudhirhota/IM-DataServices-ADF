@@ -1,0 +1,15 @@
+{
+	"name": "SRC_PMT_FRCST",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_AZODS",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "AP-PMT-FRCST-DLY"
+		},
+		"type": "SqlServerTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

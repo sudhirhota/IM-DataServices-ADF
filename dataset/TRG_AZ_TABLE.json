@@ -1,0 +1,25 @@
+{
+	"name": "TRG_AZ_TABLE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"AZ_TABLE": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "BULK-LOAD-ON DEMAND"
+		},
+		"type": "AzureSqlDWTable",
+		"typeProperties": {
+			"tableName": {
+				"value": "@Concat('ADMIN.',dataset().AZ_TABLE)",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,118 @@
+{
+	"name": "DTU-INCR-LOAD-ON DEMAND",
+	"properties": {
+		"description": "D_DT, TIME_DIM, UOM_CNVRSN_XREF Loading once in a Year on Demand.",
+		"activities": [
+			{
+				"name": "LOOKUP-DTU-INCR",
+				"type": "Lookup",
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": "SELECT D.TABLE_NAME,D.LOAD_TYPE,D.STG_TABLE_NAME,D.SPROC_NAME,D.SRC_SQL,W.CDC_TS \nFROM [ADMIN].[META_DB_TBL] D JOIN [ADMIN].[META_WATERMARK_TBL] W \nON D.TABLE_KEY=W.TABLE_KEY AND JOB_NAME='LD_YRLY' "
+					},
+					"dataset": {
+						"referenceName": "GET_AZ_DTU_TABLE_LIST",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FOREACH-DTU-TABLE",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LOOKUP-DTU-INCR",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LOOKUP-DTU-INCR').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "COPY-DTU-INCR-TL",
+							"type": "Copy",
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Destination",
+									"value": "@{Concat('ADMIN.',item().TABLE_NAME)}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "NetezzaSource",
+									"query": {
+										"value": "@{item().SRC_SQL}",
+										"type": "Expression"
+									}
+								},
+								"sink": {
+									"type": "SqlDWSink",
+									"allowPolyBase": true,
+									"writeBatchSize": 10000,
+									"preCopyScript": {
+										"value": "TRUNCATE TABLE  [ADMIN].\"@{item().TABLE_NAME}\"",
+										"type": "Expression"
+									},
+									"polyBaseSettings": {
+										"rejectValue": 0,
+										"rejectType": "value",
+										"useTypeDefault": false
+									}
+								},
+								"enableStaging": true,
+								"stagingSettings": {
+									"linkedServiceName": {
+										"referenceName": "AZURE_PRD_BLOBSTORAGE",
+										"type": "LinkedServiceReference"
+									}
+								},
+								"parallelCopies": 32
+							},
+							"inputs": [
+								{
+									"referenceName": "SRC_DTU_TL",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "TRG_DTU_TL",
+									"type": "DatasetReference",
+									"parameters": {
+										"TABLE_NAME": "@item().TABLE_NAME"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "AZ-DW-LOAD"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

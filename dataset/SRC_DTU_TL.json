@@ -1,0 +1,14 @@
+{
+	"name": "SRC_DTU_TL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NETEZZA_PRD_EDW",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "DTU-LOAD-ON DEMAND"
+		},
+		"type": "NetezzaTable"
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

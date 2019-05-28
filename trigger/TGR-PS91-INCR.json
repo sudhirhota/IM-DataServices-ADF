@@ -1,0 +1,32 @@
+{
+	"name": "TGR-PS91-INCR",
+	"properties": {
+		"description": "Trigger to load PS91 tables with incremental load",
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PS91-INCR-LOAD-DLY",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Day",
+				"interval": 1,
+				"startTime": "2019-04-24T06:00:00Z",
+				"timeZone": "UTC",
+				"schedule": {
+					"minutes": [
+						45
+					],
+					"hours": [
+						10
+					]
+				}
+			}
+		}
+	}
+}

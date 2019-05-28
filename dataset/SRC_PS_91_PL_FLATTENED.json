@@ -1,0 +1,14 @@
+{
+	"name": "SRC_PS_91_PL_FLATTENED",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NETEZZA_PRD_EDW",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "BULK-LOAD-ON DEMAND"
+		},
+		"type": "NetezzaTable"
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

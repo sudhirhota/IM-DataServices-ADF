@@ -1,0 +1,25 @@
+{
+	"name": "TGT_PS91_IU",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TABLE_NAME": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "PS-91-LOAD-DLY"
+		},
+		"type": "AzureSqlDWTable",
+		"typeProperties": {
+			"tableName": {
+				"value": "@Concat('ADMIN.',dataset().TABLE_NAME)",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

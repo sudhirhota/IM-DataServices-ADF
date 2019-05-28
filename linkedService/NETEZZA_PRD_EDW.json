@@ -1,0 +1,16 @@
+{
+	"name": "NETEZZA_PRD_EDW",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Netezza Production EDW Connection String",
+		"type": "Netezza",
+		"typeProperties": {
+			"connectionString": "server=10.0.16.8;port=5480;database=EDW;uid=svc_azureadf002",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJjMWQ0YmI2Mi05YzdjLTRjYTYtOTRkNS0yMjdjYzZmMDQ2YjIiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "PRD-GATEWAY-IR",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

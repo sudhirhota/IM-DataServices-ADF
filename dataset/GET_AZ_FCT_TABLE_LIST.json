@@ -1,0 +1,40 @@
+{
+	"name": "GET_AZ_FCT_TABLE_LIST",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "FCT-LOAD-DLY"
+		},
+		"type": "AzureSqlDWTable",
+		"structure": [
+			{
+				"name": "TABLE_NAME",
+				"type": "String"
+			},
+			{
+				"name": "LOAD_TYPE",
+				"type": "String"
+			},
+			{
+				"name": "STG_TABLE_NAME",
+				"type": "String"
+			},
+			{
+				"name": "SPROC_NAME",
+				"type": "String"
+			},
+			{
+				"name": "SRC_SQL",
+				"type": "String"
+			},
+			{
+				"name": "CDC_TS",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

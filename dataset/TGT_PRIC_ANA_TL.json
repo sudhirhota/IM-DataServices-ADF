@@ -1,0 +1,18 @@
+{
+	"name": "TGT_PRIC_ANA_TL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_DWHSE",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "OMNI_UNIV_DW_LOAD"
+		},
+		"type": "AzureSqlDWTable",
+		"schema": [],
+		"typeProperties": {
+			"tableName": "[ADMIN].[PRICING_ANALYSIS_UNIV_ODS]"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

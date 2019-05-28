@@ -1,0 +1,16 @@
+{
+	"name": "ARSTERT_PRD_ARSUSA",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "ARS USA teriary server connection details",
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=False;data source=ABCGYDCDSQL03;initial catalog=ARS_US;user id=svc_azureadf002",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI0MDliYjE4Zi05ZGE1LTRhZjEtODUxZi1mMzNmMDM5NDQ4NjkiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "PRD-GATEWAY-IR",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

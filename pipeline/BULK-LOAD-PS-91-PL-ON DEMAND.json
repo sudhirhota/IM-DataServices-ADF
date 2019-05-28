@@ -1,0 +1,98 @@
+{
+	"name": "BULK-LOAD-PS-91-PL-ON DEMAND",
+	"properties": {
+		"activities": [
+			{
+				"name": "LOOK-UP-FISCAL-YEAR",
+				"type": "Lookup",
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"typeProperties": {
+					"source": {
+						"type": "NetezzaSource",
+						"query": "SELECT DISTINCT FISCAL_YEAR from PS_91_LEDGER_PL_FLATTENED ORDER BY FISCAL_YEAR ASC"
+					},
+					"dataset": {
+						"referenceName": "LOOK_UP_FISCAL_YR",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FOR-EACH-FISCAL-YR",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LOOK-UP-FISCAL-YEAR",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LOOK-UP-FISCAL-YEAR').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "COPY-PS-91-PL-FLATTENED",
+							"type": "Copy",
+							"policy": {
+								"timeout": "70.00:00:00",
+								"retry": 1,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"typeProperties": {
+								"source": {
+									"type": "NetezzaSource",
+									"query": {
+										"value": "SELECT * from PS_91_LEDGER_PL_FLATTENED WHERE FISCAL_YEAR=@{item().FISCAL_YEAR}",
+										"type": "Expression"
+									}
+								},
+								"sink": {
+									"type": "SqlDWSink",
+									"allowPolyBase": false,
+									"writeBatchSize": 50000,
+									"preCopyScript": {
+										"value": "DELETE FROM [ADMIN].[PS_91_LEDGER_PL_FLATTENED] WHERE FISCAL_YEAR=@{item().FISCAL_YEAR}",
+										"type": "Expression"
+									},
+									"maxConcurrentConnections": 32
+								},
+								"enableStaging": false,
+								"parallelCopies": 32
+							},
+							"inputs": [
+								{
+									"referenceName": "SRC_PS_91_PL_FLATTENED",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "TRG_PS_91_PL_FLATENED",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "AZ-DW-LOAD"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

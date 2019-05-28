@@ -1,0 +1,31 @@
+{
+	"name": "GET_AZODS_ARS_TABLE_LIST",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AZURE_PRD_AZODS",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "ARS-ODS-LOAD-DLY"
+		},
+		"type": "SqlServerTable",
+		"structure": [
+			{
+				"name": "TABLE_NAME"
+			},
+			{
+				"name": "SPROC_NAME"
+			},
+			{
+				"name": "STG_TABLE_NAME"
+			},
+			{
+				"name": "SRC_SQL"
+			},
+			{
+				"name": "CDC_TS"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

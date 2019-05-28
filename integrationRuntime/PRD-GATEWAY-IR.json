@@ -1,0 +1,6 @@
+{
+	"name": "PRD-GATEWAY-IR",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}
